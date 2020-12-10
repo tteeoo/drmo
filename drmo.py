@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import cv2
+import PySimpleGUI as sg
 
 # Define constants for colors
 RED = (0, 0, 255)
@@ -11,12 +12,11 @@ def predict(eye):
 
     return True
 
-def render(video_capture, face_detector, open_eyes_detector, left_eye_detector, right_eye_detector, frame_x, frame_y):
+def render(frame, face_detector, open_eyes_detector, left_eye_detector, right_eye_detector, frame_x, frame_y):
     """Returns a rendered frame of video to be displayed. Takes input from a video capture,
     uses OpenCV classifiers and draws box around certain features."""
 
-    # Read the from the video capture and apply some filters to normalize the image
-    _, frame = video_capture.read()
+    # Apply some filters to normalize the image
     frame = cv2.resize(frame, (frame_x, frame_y), fx=0.6, fy=0.6) # resize
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # extract greyscale
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # extract rgb
@@ -101,17 +101,33 @@ if __name__ == '__main__':
     right_eye_detector = cv2.CascadeClassifier('./data/haarcascade_righteye_2splits.xml')
     left_eye_detector = cv2.CascadeClassifier('./data/haarcascade_lefteye_2splits.xml')
 
-    while True:
+    # Set up the PySimpleGUI window
+    sg.theme('Material1')
+    window = sg.Window('Driver Monitor',
+        [
+            [sg.Text('Driver Monitor')],
+            [sg.Image(filename='', key='image')],
+            [sg.Text('Created by Theo Henson')],
+        ],
+        location=(0, 0),
+        grab_anywhere=False,
+        resizable=True
+    )
 
-        # Render a frame and display it
-        frame = render(cap, face_detector, open_eyes_detector, left_eye_detector, right_eye_detector, frame_width, frame_height)
+
+    while window(timeout=20)[0] != sg.WIN_CLOSED:
+
+        # Read from the video capture and render the frame
+        ret, frame = cap.read()
+        if not ret: break
+        frame = render(frame, face_detector, open_eyes_detector, left_eye_detector, right_eye_detector, frame_width, frame_height)
+
+        # Update the GUI and write to a file
+        window['image'](data=cv2.imencode('.png', frame)[1].tobytes())
         out.write(frame)
-        cv2.imshow('DrMo', frame)
-        if cv2.waitKey(30) & 0xFF == ord('q'):
-            break
 
     # Clean up the display window and write the file
     cap.release()
     out.release()
-    cv2.destroyAllWindows()
+    window.close()
 
