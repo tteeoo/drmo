@@ -2,6 +2,7 @@
 import os
 import sys
 import cv2
+import util
 import PySimpleGUI as sg
 from features import Eye, Face, Frame
 
@@ -21,13 +22,13 @@ if __name__ == '__main__':
     # Set up the output file 
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
-    out = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 10, (frame_width, frame_height))
+    out = cv2.VideoWriter(os.path.join(util.data_path, 'out.mp4'), cv2.VideoWriter_fourcc(*'mp4v'), 10, (frame_width, frame_height))
 
     # Set up the classifiers
-    face_detector = cv2.CascadeClassifier('./data/haarcascade_frontalface_default.xml')
-    open_eyes_detector = cv2.CascadeClassifier('./data/haarcascade_eye_tree_eyeglasses.xml')
-    right_eye_detector = cv2.CascadeClassifier('./data/haarcascade_righteye_2splits.xml')
-    left_eye_detector = cv2.CascadeClassifier('./data/haarcascade_lefteye_2splits.xml')
+    face_detector = cv2.CascadeClassifier(os.path.join(util.data_path, 'haarcascade_frontalface_default.xml'))
+    open_eyes_detector = cv2.CascadeClassifier(os.path.join(util.data_path, 'haarcascade_eye_tree_eyeglasses.xml'))
+    right_eye_detector = cv2.CascadeClassifier(os.path.join(util.data_path, 'haarcascade_righteye_2splits.xml'))
+    left_eye_detector = cv2.CascadeClassifier(os.path.join(util.data_path, 'haarcascade_lefteye_2splits.xml'))
 
     # Set up the PySimpleGUI window
     sg.theme('Material1')
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     # Calculate new file names
     q = 0
     if save != '':
-        for name in os.listdir('./data/' + save):
+        for name in os.listdir(os.path.join(util.data_path, save)):
             n = int(name.split('.')[0])
             if n > q: q = n
         print('Starting at', q)
@@ -70,7 +71,7 @@ if __name__ == '__main__':
             for i in frame.carve_eyes():
                 for j in i:
                     if len(j) == 0: continue
-                    cv2.imwrite('./data/'+save+'/' + str(q) + '.jpg', j)
+                    cv2.imwrite(os.path.join(util.data_path, save, '{}.jpg'.format(str(q))), j)
                     q += 1
 
         # Update the GUI and write to a file

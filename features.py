@@ -8,13 +8,10 @@ RED = (0, 0, 255)
 GREEN = (0, 255, 0)
 THICKNESS = 2
 
-# TODO: Implement CNN
 def predict(eye):
     """Returns False if the input eye image is closed. True if open."""
 
-    pred, _ = net.classify(eye)
-
-    return pred
+    return net.classify(eye)
 
 class Eye:
     """Represents a detected eyes's state"""

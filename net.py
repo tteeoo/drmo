@@ -1,35 +1,17 @@
 import os 
-import cv2
+import util
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as f
-from PIL import Image
+from data import ImageData
 from torch.utils.data import DataLoader
-from torch.utils.data.dataset import Dataset
-from torchvision.transforms import ToTensor
-
-def get_images():
-    image_values = {}
-    data = [[], []]
-    opened, closed = './data/open/', './data/closed/'
-    for x in os.listdir(opened):
-        image_values[opened+'/'+x] = True 
-    for x in os.listdir(closed):
-        image_values[closed+'/'+x] = False
-    
-    for x in image_values:
-        data[0].append(True) if image_values[x] else data[0].append(False)
-        data[1].append(x)
-
-    return data
 
 class EyeNet(nn.Module):
-    """ Class representing the neural network. """
+    """Class representing the neural network."""
 
     def __init__(self):
-        """ Initialize the model with appropriate starting weights. """
+        """Initialize the model's layers."""
 
         super(EyeNet, self).__init__()
         self.pool = nn.MaxPool2d(1, 1)
@@ -40,7 +22,7 @@ class EyeNet(nn.Module):
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
-        """ Calculations based on image tensor input. """
+        """Calculate a forward pass through the layers."""
 
         x = self.pool(f.relu(self.conv1(x)))
         x = self.pool(f.relu(self.conv2(x)))
@@ -52,70 +34,40 @@ class EyeNet(nn.Module):
         return x
 
 net = EyeNet()
-device = 'cpu'
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 criterion = nn.CrossEntropyLoss()
 
-class ImageData(Dataset):
-    """ Class to represent image and label input. """
+dset = DataLoader(ImageData(util.get_images()), batch_size=16, shuffle=True, num_workers=1)
 
-    def __init__(self, yx, width=48, height=48, transform=None):
-        self.width = width
-        self.height = height
-        self.transform = transform
-        y, x = yx 
-        self.y = y # array of label
-        self.x = x # array of image paths
-
-    def __getitem__(self, index):
-        """ Process image and labels to be sent to the NN. """
-
-        img = cv2.cvtColor(self.x[index], cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(img)
-        img = img.resize((self.width, self.height)) 
-        img = img.convert('RGB') #convert image to RGB channel
-        img = np.asarray(img).transpose(-1, 0, 1) # we have to change the dimensions from width x height x channel (WHC) to channel x width x height (CWH)
-        img = img/255
-        img = torch.from_numpy(np.asarray(img)) # create the image tensor
-        label = torch.from_numpy(np.asarray(self.y[index]).reshape([1, 1])) # create the label tensor
-        
-        return img, label, self.x[index]
-    
-    def __len__(self):
-        return len(self.x)
-
-dset = DataLoader(ImageData(get_images()), batch_size=16, shuffle=True, num_workers=1)
-
-# set up the NN
-net.to(device)
-if os.path.isfile('./data/net.pth'):
-    net.load_state_dict(torch.load('./data/net.pth', map_location=device))
+# Set up the NN
+net.to(util.device)
+if os.path.isfile(os.path.join(util.data_path, os.path.join(util.data_path, 'net.pth'))):
+    net.load_state_dict(torch.load(os.path.join(util.data_path, 'net.pth'), map_location=util.device))
 
 def classify(img):
-    """ Runs the given image through the model and returns the results. """
+    """Runs the given image through the model and returns the results."""
 
     data = ImageData([[True], [img]])
     tensor_image, _, img_path = data[0] # get image tensor etc
-    tensor_image = tensor_image.to(device).unsqueeze(0) # format image tensor
-    
-    output = net(tensor_image.float()) # run image tensor through network to get predicted value (1 is cat 0 is not)
+    tensor_image = tensor_image.to(util.device).unsqueeze(0) # format image tensor
+    output = net(tensor_image.float()) # forward pass
 
     _, predicted = torch.max(output, 1)
-    cat = True if predicted.item() == 1 else False
+    opened = True if predicted.item() == 1 else False
 
-    return cat, img_path
+    return opened
 
 def train(epochs, start_from_scratch=False):
-    """ Train the NN on the dataset in cats/. """
+    """Train the model on the data."""
         
     n = EyeNet() if start_from_scratch else net
-    n.to(device)
+    n.to(util.device)
 
     for epoch in range(epochs):
         for data in dset:
 
             inputs, labels, _ = data
-            inputs, labels = inputs.to(device), labels.to(device).squeeze().long()
+            inputs, labels = inputs.to(util.device), labels.to(util.device).squeeze().long()
 
             optimizer.zero_grad()
 
@@ -126,4 +78,6 @@ def train(epochs, start_from_scratch=False):
             optimizer.step() # optimize with new weights
 
     print('Finished Training')
-    torch.save(net.state_dict(), './data/net.pth')
+    torch.save(net.state_dict(), os.path.join(util.data_path, 'net.pth'))
+    print('Saved model to', os.path.join(util.data_path, 'net.pth'))
+
