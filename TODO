@@ -1,0 +1,4 @@
+- Automatically download data (xml and pth)
+- Implement command line arguments:
+	- Train
+	- Single render on an image

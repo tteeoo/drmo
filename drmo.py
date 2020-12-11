@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # Open the video capture
     cap = cv2.VideoCapture(0)
     if cap.isOpened() == False:
-        print('error: cannot open video capture')
+        print('Cannot open video capture!')
         exit(1)
 
     # Set up the output file 
@@ -30,27 +30,31 @@ if __name__ == '__main__':
     right_eye_detector = cv2.CascadeClassifier(os.path.join(util.data_path, 'haarcascade_righteye_2splits.xml'))
     left_eye_detector = cv2.CascadeClassifier(os.path.join(util.data_path, 'haarcascade_lefteye_2splits.xml'))
 
-    # Set up the PySimpleGUI window
-    sg.theme('Material1')
-    window = sg.Window('Driver Monitor',
-        [
-            [sg.Text('Driver Monitor')],
-            [sg.Image(filename='', key='image')],
-            [sg.Text('Created by Theo Henson')],
-        ],
-        location=(0, 0),
-        grab_anywhere=False,
-        resizable=True
-    )
-
     # Calculate new file names
     q = 0
     if save != '':
         for name in os.listdir(os.path.join(util.data_path, save)):
             n = int(name.split('.')[0])
             if n > q: q = n
-        print('Starting at', q)
-        print('Saving eyes as', save)
+
+    # Set up the PySimpleGUI window
+    sg.theme('Material1')
+    window = sg.Window('Driver Monitor',
+        [
+            [sg.Text('Driver Monitor')],
+            [sg.Image(filename='', key='image')],
+            [sg.Text('Diagnostic data: resolution: {}x{}, torch device: {}{}'.format(
+                str(frame_width),
+                str(frame_height),
+                util.device,
+                ', saving eyes to '+os.path.join(util.data_path, save) if save != '' else '',
+            ))],
+            [sg.Text('Created by Theo Henson')],
+        ],
+        location=(0, 0),
+        grab_anywhere=False,
+        resizable=True
+    )
 
     past = None
     while window(timeout=20)[0] != sg.WIN_CLOSED:
@@ -64,7 +68,7 @@ if __name__ == '__main__':
         # Detect faces and render the rectangles on the frame
         frame.detect(face_detector, open_eyes_detector, left_eye_detector, right_eye_detector)
         past = frame.past
-        draw = frame.render()
+        draw = cv2.flip(frame.render(), 1)
 
         # Save eyes for dataset
         if save != '':

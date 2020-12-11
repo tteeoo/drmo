@@ -131,6 +131,13 @@ class Frame:
             if len(le) < 1: le.append(None)
 
             self.faces.append(Face((re[0], le[0]), (x, y, w, h)))
+      
+        if len(self.faces) == 2:
+            nf = []
+            for face in self.faces:
+                if face.eyes[0] != None or face.eyes[1] != None:
+                    nf.append(face)
+            self.faces = nf
 
         self.past.append(self.faces)
         self.past = self.past[-HIST:]
