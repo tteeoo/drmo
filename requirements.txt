@@ -1,2 +1,5 @@
 opencv-python
 pysimplegui
+torch
+torchvision
+pillow

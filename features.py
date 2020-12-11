@@ -1,8 +1,9 @@
+import net
 import cv2
 
 # HIST is the number of past faces to remember.
 # At 30 fps 30 faces would be one second of recording.
-HIST = 150
+HIST = 256
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
 THICKNESS = 2
@@ -11,7 +12,9 @@ THICKNESS = 2
 def predict(eye):
     """Returns False if the input eye image is closed. True if open."""
 
-    return True
+    pred, _ = net.classify(eye)
+
+    return pred
 
 class Eye:
     """Represents a detected eyes's state"""
@@ -37,6 +40,26 @@ class Frame:
         self.gray = cv2.cvtColor(self.data, cv2.COLOR_BGR2GRAY)
         self.faces = []
         self.past = past
+
+    def carve_eyes(self):
+        """Returns the data of just the eyes from the frame."""
+
+        eyes = []
+        for face in self.faces:
+            x, y, w, h = face.coords
+            left_face = self.data[y:y+h, x+int(w/2):x+w]
+            right_face = self.data[y:y+h, x:x+int(w/2)]
+
+            feyes = [[], []]
+            for i, eye in enumerate(face.eyes):
+                if eye == None: continue
+                side = left_face if i else right_face
+                ex, ey, ew, eh = eye.coords
+                feyes[i] = side[ey:ey+eh, ex:ex+ew]
+
+            eyes.append(tuple(feyes))
+
+        return eyes
 
     def render(self):
         """Returns a frame with rendered shapes on it."""

@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
+import os
+import sys
 import cv2
 import PySimpleGUI as sg
 from features import Eye, Face, Frame
 
 if __name__ == '__main__':
+
+    # Handle cli args
+    save = ''
+    if len(sys.argv) > 1:
+        save = sys.argv[1]
 
     # Open the video capture
     cap = cv2.VideoCapture(0)
@@ -35,6 +42,15 @@ if __name__ == '__main__':
         resizable=True
     )
 
+    # Calculate new file names
+    q = 0
+    if save != '':
+        for name in os.listdir('./data/' + save):
+            n = int(name.split('.')[0])
+            if n > q: q = n
+        print('Starting at', q)
+        print('Saving eyes as', save)
+
     past = None
     while window(timeout=20)[0] != sg.WIN_CLOSED:
 
@@ -48,6 +64,14 @@ if __name__ == '__main__':
         frame.detect(face_detector, open_eyes_detector, left_eye_detector, right_eye_detector)
         past = frame.past
         draw = frame.render()
+
+        # Save eyes for dataset
+        if save != '':
+            for i in frame.carve_eyes():
+                for j in i:
+                    if len(j) == 0: continue
+                    cv2.imwrite('./data/'+save+'/' + str(q) + '.jpg', j)
+                    q += 1
 
         # Update the GUI and write to a file
         window['image'](data=cv2.imencode('.png', draw)[1].tobytes())
