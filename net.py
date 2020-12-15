@@ -41,7 +41,7 @@ dset = DataLoader(ImageData(util.get_images()), batch_size=16, shuffle=True, num
 
 # Set up the NN
 net.to(util.device)
-if os.path.isfile(os.path.join(util.data_path, os.path.join(util.data_path, 'net.pth'))):
+if os.path.isfile(os.path.join(util.data_path, 'net.pth')):
     net.load_state_dict(torch.load(os.path.join(util.data_path, 'net.pth'), map_location=util.device))
 
 def classify(img):
@@ -57,12 +57,9 @@ def classify(img):
 
     return opened
 
-def train(epochs, start_from_scratch=False):
+def train(epochs):
     """Train the model on the data."""
         
-    n = EyeNet() if start_from_scratch else net
-    n.to(util.device)
-
     for epoch in range(epochs):
         for data in dset:
 
@@ -71,7 +68,7 @@ def train(epochs, start_from_scratch=False):
 
             optimizer.zero_grad()
 
-            outputs = n(inputs.float()) # predicted values (1 if cat 0 if not cat)
+            outputs = net(inputs.float()) # predicted values (1 if cat 0 if not cat)
             loss = criterion(outputs, labels) # calculate the loss
             print('epoch:', epoch, 'loss of batch:', loss.item())
             loss.backward() # calculate improved weights based on loss
