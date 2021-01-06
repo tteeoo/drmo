@@ -48,7 +48,7 @@ def classify(img):
     """Runs the given image through the model and returns the results."""
 
     data = ImageData([[True], [img]])
-    tensor_image, _, img_path = data[0] # get image tensor etc
+    tensor_image = data[0][0] # get image tensor
     tensor_image = tensor_image.to(util.device).unsqueeze(0) # format image tensor
     output = net(tensor_image.float()) # forward pass
 
