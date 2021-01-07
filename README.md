@@ -6,3 +6,5 @@ Requirements:
 * Python < 3.9 and > 3.6
 
 Tested on GNU/Linux.
+
+Licensed under the MIT License.
