@@ -4,6 +4,8 @@ import sys
 import cv2
 import util
 import PySimpleGUI as sg
+from features import HIST
+from datetime import datetime
 from features import Eye, Face, Frame
 
 if __name__ == '__main__':
@@ -43,6 +45,7 @@ if __name__ == '__main__':
         [
             [sg.Text('Driver Monitor')],
             [sg.Image(filename='', key='image')],
+            [sg.MLine(size=(64,16), key='status', font=('mono', 12))],
             [sg.Text('Diagnostic data: resolution: {}x{}, torch device: {}{}'.format(
                 str(frame_width),
                 str(frame_height),
@@ -55,8 +58,11 @@ if __name__ == '__main__':
         grab_anywhere=False,
         resizable=True
     )
+    sg.cprint_set_output_destination(window, 'status')
 
     past = None
+    last_status = -1
+
     while window(timeout=20)[0] != sg.WIN_CLOSED:
 
         # Read from the video capture and instantiate the frame
@@ -78,9 +84,47 @@ if __name__ == '__main__':
                     cv2.imwrite(os.path.join(util.data_path, save, '{}.jpg'.format(str(q))), j)
                     q += 1
 
-        # Update the GUI and write to a file
+        # Update the display video and write to a file
         window['image'](data=cv2.imencode('.png', draw)[1].tobytes())
         out.write(draw)
+
+        # Skip status if not enough frames have been accumulated
+        if len(past) < (HIST / 10):
+            continue
+
+        # Calculate the current status of the driver
+        status = 0
+        no_face = 0
+        closed_eyes = 0
+        for faces in past:
+            if len(faces) == 0: no_face += 1
+            for face in faces:
+                for eye in face.eyes:
+                    if eye == None: continue
+                    if not eye.opened: closed_eyes += 1
+
+        if no_face > (len(past) * 0.4):
+            status = 2
+        elif closed_eyes > (len(past) * 0.7):
+            status = 1
+
+        # Print the current status
+        if status == last_status:
+            pass
+        elif status == 0:
+            sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS FOCUSSED   "),
+                background_color="green", text_color="white"
+            )
+        elif status == 1:
+            sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS UNFOCUSSED "),
+                background_color="red", text_color="white"
+            )
+        elif status == 2:
+            sg.cprint(datetime.now().strftime("%H:%M:%S -- NO DRIVER DETECTED   "),
+                background_color="yellow"
+            )
+        last_status = status
+
 
     # Clean up the display window and write the file
     cap.release()
