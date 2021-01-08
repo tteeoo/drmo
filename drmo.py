@@ -95,6 +95,7 @@ if __name__ == '__main__':
         # Calculate the current status of the driver
         status = 0
         no_face = 0
+        open_eyes = 0
         closed_eyes = 0
         for faces in past:
             if len(faces) == 0: no_face += 1
@@ -102,25 +103,26 @@ if __name__ == '__main__':
                 for eye in face.eyes:
                     if eye == None: continue
                     if not eye.opened: closed_eyes += 1
+                    else: open_eyes += 1
 
-        if no_face > (len(past) * 0.4):
+        if no_face > (len(past) * 0.3):
             status = 2
-        elif closed_eyes > (len(past) * 0.7):
+        elif closed_eyes > (open_eyes * 0.8):
             status = 1
 
         # Print the current status
         if status == last_status:
             pass
         elif status == 0:
-            sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS FOCUSSED   "),
+            sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS FOCUSED   "),
                 background_color="green", text_color="white"
             )
         elif status == 1:
-            sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS UNFOCUSSED "),
+            sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS UNFOCUSED "),
                 background_color="red", text_color="white"
             )
         elif status == 2:
-            sg.cprint(datetime.now().strftime("%H:%M:%S -- NO DRIVER DETECTED   "),
+            sg.cprint(datetime.now().strftime("%H:%M:%S -- NO DRIVER DETECTED  "),
                 background_color="yellow"
             )
         last_status = status

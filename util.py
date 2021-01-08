@@ -1,7 +1,8 @@
 import os 
-import torch
+# import torch
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+# device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
 
 data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data-drmo/'))
 

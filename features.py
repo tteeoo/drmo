@@ -3,7 +3,7 @@ import cv2
 
 # HIST is the number of past faces to remember.
 # At 30 fps 30 faces would be one second of recording.
-HIST = 256
+HIST = 30
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
 THICKNESS = 2
