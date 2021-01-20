@@ -68,10 +68,12 @@ class FileManager:
                 for chunk in r.iter_content(1024):
                     dl += len(chunk)
                     f.write(chunk)
+                    diff = (time.time() - start)
+                    if diff == 0: diff = 1
                     sys.stdout.write('\r{}/{}MB, {} MB/s'.format(
                         round(dl / 1024 / 1024, 1),
                         total_length,
-                        round((dl // (time.time() - start)) / 1024 / 1024, 1)
+                        round((dl / diff) / 1024 / 1024, 1)
                     ))
                 print('')
 
