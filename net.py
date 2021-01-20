@@ -34,10 +34,6 @@ class EyeNet(nn.Module):
         return x
 
 net = EyeNet()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-criterion = nn.CrossEntropyLoss()
-
-dset = DataLoader(ImageData(util.get_images()), batch_size=16, shuffle=True, num_workers=1)
 
 # Set up the NN
 net.to(util.device)
@@ -59,6 +55,11 @@ def classify(img):
 
 def train(epochs):
     """Train the model on the data."""
+
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    criterion = nn.CrossEntropyLoss()
+
+    dset = DataLoader(ImageData(util.get_images()), batch_size=16, shuffle=True, num_workers=1)
         
     for epoch in range(epochs):
         for data in dset:

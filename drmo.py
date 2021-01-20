@@ -10,10 +10,14 @@ from features import Eye, Face, Frame
 
 if __name__ == '__main__':
 
+    fm = util.FileManager()
+    if not fm.fully_installed:
+        fm.install()
+
     # Handle cli args
     save = ''
-    if len(sys.argv) > 1:
-        save = sys.argv[1]
+    # if len(sys.argv) > 1:
+    #     save = sys.argv[1]
 
     # Open the video capture
     cap = cv2.VideoCapture(0)
