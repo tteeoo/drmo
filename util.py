@@ -1,4 +1,5 @@
 import os 
+import signal
 import sys
 import time
 import requests
@@ -23,6 +24,17 @@ def get_images():
         data[1].append(os.path.join(closed, f))
 
     return data
+
+class SignalKiller:
+    """Class to stop the execution loop when signalled."""
+
+    def __init__(self):
+        self.kill_now = False
+        signal.signal(signal.SIGINT, self.kill)
+        signal.signal(signal.SIGTERM, self.kill)
+
+    def kill(self, *args):
+        self.kill_now = True
 
 class FileManager:
     """Class to represent the various data files."""

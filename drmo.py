@@ -95,90 +95,91 @@ if __name__ == '__main__':
     past = None
     last_status = -1
 
-    try:
-        while not is_gui or window(timeout=20)[0] != sg.WIN_CLOSED:
 
-            # Read from the video capture and instantiate the frame
-            ret, data = cap.read()
-            if not ret: break
-            if past != None: frame = Frame(data, (frame_width, frame_height), past)
-            else: frame = Frame(data, (frame_width, frame_height), [])
+    # Handle signals
+    sk = util.SignalKiller()
 
-            # Detect faces and render the rectangles on the frame
-            frame.detect(face_detector, open_eyes_detector, left_eye_detector, right_eye_detector)
-            past = frame.past
-            draw = cv2.flip(frame.render(), 1)
+    while (not is_gui or window(timeout=20)[0] != sg.WIN_CLOSED) and not sk.kill_now:
 
-            # Save eyes for dataset
-            if save != '':
-                for i in frame.carve_eyes():
-                    for j in i:
-                        if len(j) == 0: continue
-                        cv2.imwrite(os.path.join(util.data_path, save, '{}.jpg'.format(str(q))), j)
-                        q += 1
+        # Read from the video capture and instantiate the frame
+        ret, data = cap.read()
+        if not ret: break
+        if past != None: frame = Frame(data, (frame_width, frame_height), past)
+        else: frame = Frame(data, (frame_width, frame_height), [])
 
-            # Update the display video and write to a file
+        # Detect faces and render the rectangles on the frame
+        frame.detect(face_detector, open_eyes_detector, left_eye_detector, right_eye_detector)
+        past = frame.past
+        draw = cv2.flip(frame.render(), 1)
+
+        # Save eyes for dataset
+        if save != '':
+            for i in frame.carve_eyes():
+                for j in i:
+                    if len(j) == 0: continue
+                    cv2.imwrite(os.path.join(util.data_path, save, '{}.jpg'.format(str(q))), j)
+                    q += 1
+
+        # Update the display video and write to a file
+        if is_gui:
+            window['image'](data=cv2.imencode('.png', draw)[1].tobytes())
+        out.write(draw)
+
+        # Skip status if not enough frames have been accumulated
+        if len(past) < (HIST / 10):
+            continue
+
+        # Calculate the current status of the driver
+        status = 0
+        no_face = 0
+        open_eyes = 0
+        closed_eyes = 0
+        for faces in past:
+            if len(faces) == 0: no_face += 1
+            for face in faces:
+                for eye in face.eyes:
+                    if eye == None: continue
+                    if not eye.opened: closed_eyes += 1
+                    else: open_eyes += 1
+
+        if no_face > (len(past) * 0.3):
+            status = 2
+        elif closed_eyes > (open_eyes * 0.8):
+            status = 1
+
+        # Print the current status
+        if status == last_status:
+            pass
+        elif status == 0:
             if is_gui:
-                window['image'](data=cv2.imencode('.png', draw)[1].tobytes())
-            out.write(draw)
-
-            # Skip status if not enough frames have been accumulated
-            if len(past) < (HIST / 10):
-                continue
-
-            # Calculate the current status of the driver
-            status = 0
-            no_face = 0
-            open_eyes = 0
-            closed_eyes = 0
-            for faces in past:
-                if len(faces) == 0: no_face += 1
-                for face in faces:
-                    for eye in face.eyes:
-                        if eye == None: continue
-                        if not eye.opened: closed_eyes += 1
-                        else: open_eyes += 1
-
-            if no_face > (len(past) * 0.3):
-                status = 2
-            elif closed_eyes > (open_eyes * 0.8):
-                status = 1
-
-            # Print the current status
-            if status == last_status:
-                pass
-            elif status == 0:
-                if is_gui:
-                        sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS FOCUSED   "),
-                            background_color="green", text_color="white"
-                        )
-                if is_pi:
-                    gpio.output(LED_NO, False)
-                    gpio.output(LED_NONE, False)
-                    gpio.output(LED_YES, True)
-            elif status == 1:
-                if is_gui:
-                    sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS UNFOCUSED "),
-                        background_color="red", text_color="white"
+                    sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS FOCUSED   "),
+                        background_color="green", text_color="white"
                     )
-                if is_pi:
-                    gpio.output(LED_NO, True)
-                    gpio.output(LED_NONE, False)
-                    gpio.output(LED_YES, False)
-            elif status == 2:
-                if is_gui:
-                    sg.cprint(datetime.now().strftime("%H:%M:%S -- NO DRIVER DETECTED  "),
-                        background_color="yellow"
-                    )
-                if is_pi:
-                    gpio.output(LED_NO, False)
-                    gpio.output(LED_NONE, True)
-                    gpio.output(LED_YES, False)
-            last_status = status
+            if is_pi:
+                gpio.output(LED_NO, False)
+                gpio.output(LED_NONE, False)
+                gpio.output(LED_YES, True)
+        elif status == 1:
+            if is_gui:
+                sg.cprint(datetime.now().strftime("%H:%M:%S -- DRIVER IS UNFOCUSED "),
+                    background_color="red", text_color="white"
+                )
+            if is_pi:
+                gpio.output(LED_NO, True)
+                gpio.output(LED_NONE, False)
+                gpio.output(LED_YES, False)
+        elif status == 2:
+            if is_gui:
+                sg.cprint(datetime.now().strftime("%H:%M:%S -- NO DRIVER DETECTED  "),
+                    background_color="yellow"
+                )
+            if is_pi:
+                gpio.output(LED_NO, False)
+                gpio.output(LED_NONE, True)
+                gpio.output(LED_YES, False)
+        last_status = status
 
-    except KeyboardInterrupt:
-        print("Quitting")
-
+    print("Quitting")
 
     # Clean up the display window and write the file
     cap.release()
