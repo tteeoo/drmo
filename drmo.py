@@ -8,11 +8,28 @@ from features import HIST
 from datetime import datetime
 from features import Eye, Face, Frame
 
+is_pi = False
+led = None
+try:
+    import RPi.GPIO as gpio
+    is_pi = True
+except:
+    pass
+
+LAMP_CONTROL = 17
+
 if __name__ == '__main__':
 
     fm = util.FileManager()
     if not fm.fully_installed:
         fm.install()
+
+    # Turn on IR lamp
+    if is_pi:
+        gpio.setmode(gpio.BCM)
+        gpio.setup(LAMP_CONTROL, gpio.OUT)
+        gpio.output(LAMP_CONTROL, True)
+        print('IR lamp on')
 
     # Handle cli args
     save = ''
@@ -136,4 +153,6 @@ if __name__ == '__main__':
     cap.release()
     out.release()
     window.close()
+    if is_pi:
+        gpio.cleanup()
 
