@@ -29,7 +29,7 @@ class FileManager:
     
     def __init__(self):
         self.paths = {os.path.join(data_path, x.split('/')[-1]): x for x in (
-            'https://directory.theohenson.com/file/net.pth', 
+            'https://dir.theohenson.com/file/net.pth', 
             'https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml',
             'https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_lefteye_2splits.xml',
             'https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_righteye_2splits.xml',

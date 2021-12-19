@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import os
-import sys
 import cv2
 import util
 import PySimpleGUI as sg
-from features import HIST
 from datetime import datetime
-from features import Eye, Face, Frame
+from features import Frame, HIST
 
 is_pi = False
 led = None
